@@ -31,9 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SignalBus.h"
 
 #include <algorithm>
-#include <atomic>
+// #include <atomic>
 #include <string>
-#include <thread>
+// #include <thread>
 #include <vector>
 
 namespace DSPatch
@@ -94,7 +94,7 @@ public:
     int GetBufferCount() const;
 
     void Tick( int bufferNo );
-    void TickParallel( int bufferNo );
+    // void TickParallel( int bufferNo );
 
     void Scan( std::vector<Component*>& components );
     void ScanParallel( std::vector<std::vector<DSPatch::Component*>>& componentsMap, int& scanPosition );
@@ -107,45 +107,45 @@ protected:
     void SetOutputCount_( int outputCount, const std::vector<std::string>& outputNames = {} );
 
 private:
-    class AtomicFlag final
-    {
-    public:
-        AtomicFlag( const AtomicFlag& ) = delete;
-        AtomicFlag& operator=( const AtomicFlag& ) = delete;
+    // class AtomicFlag final
+    // {
+    // public:
+    //     AtomicFlag( const AtomicFlag& ) = delete;
+    //     AtomicFlag& operator=( const AtomicFlag& ) = delete;
 
-        inline AtomicFlag() = default;
+    //     inline AtomicFlag() = default;
 
-        inline AtomicFlag( AtomicFlag&& )
-        {
-        }
+    //     inline AtomicFlag( AtomicFlag&& )
+    //     {
+    //     }
 
-        inline void WaitAndClear()
-        {
-            while ( flag.test_and_set( std::memory_order_acquire ) )
-            {
-                std::this_thread::yield();
-            }
-        }
+    //     inline void WaitAndClear()
+    //     {
+    //         while ( flag.test_and_set( std::memory_order_acquire ) )
+    //         {
+    //             std::this_thread::yield();
+    //         }
+    //     }
 
-        inline void Set()
-        {
-            flag.clear( std::memory_order_release );
-        }
+    //     inline void Set()
+    //     {
+    //         flag.clear( std::memory_order_release );
+    //     }
 
-        inline void Clear()
-        {
-            flag.test_and_set( std::memory_order_acquire );
-        }
+    //     inline void Clear()
+    //     {
+    //         flag.test_and_set( std::memory_order_acquire );
+    //     }
 
-    private:
-        std::atomic_flag flag = { true };  // true here actually means unset / cleared
-    };
+    // private:
+    //     std::atomic_flag flag = { true };  // true here actually means unset / cleared
+    // };
 
     struct RefCounter final
     {
         int count = 0;
         int total = 0;
-        AtomicFlag readyFlag;
+        // AtomicFlag readyFlag;
     };
 
     struct Wire final
@@ -155,11 +155,11 @@ private:
         int toInput;
     };
 
-    void _WaitForRelease( int bufferNo );
-    void _ReleaseNextBuffer( int bufferNo );
+    // void _WaitForRelease( int bufferNo );
+    // void _ReleaseNextBuffer( int bufferNo );
 
     void _GetOutput( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus );
-    void _GetOutputParallel( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus );
+    // void _GetOutputParallel( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus );
 
     void _IncRefs( int output );
     void _DecRefs( int output );
@@ -175,7 +175,7 @@ private:
 
     std::vector<Wire> _inputWires;
 
-    std::vector<AtomicFlag> _releaseFlags;
+    // std::vector<AtomicFlag> _releaseFlags;
 
     std::vector<std::string> _inputNames;
     std::vector<std::string> _outputNames;
@@ -317,7 +317,7 @@ inline void Component::SetBufferCount( int bufferCount, int startBuffer )
     _inputBuses.resize( bufferCount );
     _outputBuses.resize( bufferCount );
 
-    _releaseFlags.resize( bufferCount );
+    // _releaseFlags.resize( bufferCount );
 
     _refs.resize( bufferCount );
 
@@ -331,14 +331,14 @@ inline void Component::SetBufferCount( int bufferCount, int startBuffer )
         _inputBuses[i].SetSignalCount( inputCount );
         _outputBuses[i].SetSignalCount( outputCount );
 
-        if ( i == startBuffer )
-        {
-            _releaseFlags[i].Set();
-        }
-        else
-        {
-            _releaseFlags[i].Clear();
-        }
+        // if ( i == startBuffer )
+        // {
+        //     _releaseFlags[i].Set();
+        // }
+        // else
+        // {
+        //     _releaseFlags[i].Clear();
+        // }
 
         _refs[i].resize( refCount );
         for ( size_t j = 0; j < refCount; ++j )
@@ -373,66 +373,66 @@ inline void Component::Tick( int bufferNo )
     // clear outputs
     outputBus.ClearAllValues();
 
-    if ( _bufferCount != 1 && _processOrder == ProcessOrder::InOrder )
-    {
-        // wait for our turn to process
-        _WaitForRelease( bufferNo );
+    // if ( _bufferCount != 1 && _processOrder == ProcessOrder::InOrder )
+    // {
+    //     // wait for our turn to process
+    //     _WaitForRelease( bufferNo );
 
+    //     // call Process_() with newly aquired inputs
+    //     Process_( inputBus, outputBus );
+
+    //     // signal that we're done processing
+    //     _ReleaseNextBuffer( bufferNo );
+    // }
+    // else
+    // {
         // call Process_() with newly aquired inputs
         Process_( inputBus, outputBus );
-
-        // signal that we're done processing
-        _ReleaseNextBuffer( bufferNo );
-    }
-    else
-    {
-        // call Process_() with newly aquired inputs
-        Process_( inputBus, outputBus );
-    }
+    // }
 }
 
-inline void Component::TickParallel( int bufferNo )
-{
-    auto& inputBus = _inputBuses[bufferNo];
-    auto& outputBus = _outputBuses[bufferNo];
+// inline void Component::TickParallel( int bufferNo )
+// {
+//     auto& inputBus = _inputBuses[bufferNo];
+//     auto& outputBus = _outputBuses[bufferNo];
 
-    // clear inputs and outputs
-    inputBus.ClearAllValues();
-    outputBus.ClearAllValues();
+//     // clear inputs and outputs
+//     inputBus.ClearAllValues();
+//     outputBus.ClearAllValues();
 
-    for ( const auto& wire : _inputWires )
-    {
-        // get new inputs from incoming components
-        wire.fromComponent->_GetOutputParallel( bufferNo, wire.fromOutput, wire.toInput, inputBus );
-    }
+//     for ( const auto& wire : _inputWires )
+//     {
+//         // get new inputs from incoming components
+//         wire.fromComponent->_GetOutputParallel( bufferNo, wire.fromOutput, wire.toInput, inputBus );
+//     }
 
-    if ( _bufferCount != 1 && _processOrder == ProcessOrder::InOrder )
-    {
-        // wait for our turn to process
-        _WaitForRelease( bufferNo );
+//     if ( _bufferCount != 1 && _processOrder == ProcessOrder::InOrder )
+//     {
+//         // wait for our turn to process
+//         _WaitForRelease( bufferNo );
 
-        // call Process_() with newly aquired inputs
-        Process_( inputBus, outputBus );
+//         // call Process_() with newly aquired inputs
+//         Process_( inputBus, outputBus );
 
-        // signal that we're done processing
-        _ReleaseNextBuffer( bufferNo );
-    }
-    else
-    {
-        // call Process_() with newly aquired inputs
-        Process_( inputBus, outputBus );
-    }
+//         // signal that we're done processing
+//         _ReleaseNextBuffer( bufferNo );
+//     }
+//     else
+//     {
+//         // call Process_() with newly aquired inputs
+//         Process_( inputBus, outputBus );
+//     }
 
-    // signal that our outputs are ready
-    for ( auto& ref : _refs[bufferNo] )
-    {
-        // readyFlags are cleared in _GetOutputParallel() which ofc is only called on outputs with refs
-        if ( ref.total != 0 )
-        {
-            ref.readyFlag.Set();
-        }
-    }
-}
+//     // signal that our outputs are ready
+//     for ( auto& ref : _refs[bufferNo] )
+//     {
+//         // readyFlags are cleared in _GetOutputParallel() which ofc is only called on outputs with refs
+//         if ( ref.total != 0 )
+//         {
+//             ref.readyFlag.Set();
+//         }
+//     }
+// }
 
 inline void Component::Scan( std::vector<Component*>& components )
 {
@@ -454,36 +454,36 @@ inline void Component::Scan( std::vector<Component*>& components )
     components.emplace_back( this );
 }
 
-inline void Component::ScanParallel( std::vector<std::vector<DSPatch::Component*>>& componentsMap, int& scanPosition )
-{
-    // continue only if this component has not already been scanned
-    if ( _scanPosition != -1 )
-    {
-        scanPosition = _scanPosition;
-        return;
-    }
+// inline void Component::ScanParallel( std::vector<std::vector<DSPatch::Component*>>& componentsMap, int& scanPosition )
+// {
+//     // continue only if this component has not already been scanned
+//     if ( _scanPosition != -1 )
+//     {
+//         scanPosition = _scanPosition;
+//         return;
+//     }
 
-    // initialize scanPositions
-    _scanPosition = 0;
-    scanPosition = 0;
+//     // initialize scanPositions
+//     _scanPosition = 0;
+//     scanPosition = 0;
 
-    for ( const auto& wire : _inputWires )
-    {
-        // scan incoming components
-        wire.fromComponent->ScanParallel( componentsMap, scanPosition );
+//     for ( const auto& wire : _inputWires )
+//     {
+//         // scan incoming components
+//         wire.fromComponent->ScanParallel( componentsMap, scanPosition );
 
-        // ensure we're using the furthest scanPosition detected
-        _scanPosition = std::max( _scanPosition, ++scanPosition );
-    }
+//         // ensure we're using the furthest scanPosition detected
+//         _scanPosition = std::max( _scanPosition, ++scanPosition );
+//     }
 
-    // insert component at _scanPosition
-    if ( _scanPosition == (int)componentsMap.size() )
-    {
-        componentsMap.emplace_back( std::vector<DSPatch::Component*>{} );
-        componentsMap[_scanPosition].reserve( componentsMap.capacity() );
-    }
-    componentsMap[_scanPosition].emplace_back( this );
-}
+//     // insert component at _scanPosition
+//     if ( _scanPosition == (int)componentsMap.size() )
+//     {
+//         componentsMap.emplace_back( std::vector<DSPatch::Component*>{} );
+//         componentsMap[_scanPosition].reserve( componentsMap.capacity() );
+//     }
+//     componentsMap[_scanPosition].emplace_back( this );
+// }
 
 inline void Component::EndScan()
 {
@@ -519,22 +519,22 @@ inline void Component::SetOutputCount_( int outputCount, const std::vector<std::
     }
 }
 
-inline void Component::_WaitForRelease( int bufferNo )
-{
-    _releaseFlags[bufferNo].WaitAndClear();
-}
+// inline void Component::_WaitForRelease( int bufferNo )
+// {
+//     _releaseFlags[bufferNo].WaitAndClear();
+// }
 
-inline void Component::_ReleaseNextBuffer( int bufferNo )
-{
-    if ( ++bufferNo == _bufferCount )  // release the next available buffer
-    {
-        _releaseFlags[0].Set();
-    }
-    else
-    {
-        _releaseFlags[bufferNo].Set();
-    }
-}
+// inline void Component::_ReleaseNextBuffer( int bufferNo )
+// {
+//     if ( ++bufferNo == _bufferCount )  // release the next available buffer
+//     {
+//         _releaseFlags[0].Set();
+//     }
+//     else
+//     {
+//         _releaseFlags[bufferNo].Set();
+//     }
+// }
 
 inline void Component::_GetOutput( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus )
 {
@@ -565,39 +565,39 @@ inline void Component::_GetOutput( int bufferNo, int fromOutput, int toInput, DS
     }
 }
 
-inline void Component::_GetOutputParallel( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus )
-{
-    auto& signal = *_outputBuses[bufferNo].GetSignal( fromOutput );
-    auto& ref = _refs[bufferNo][fromOutput];
+// inline void Component::_GetOutputParallel( int bufferNo, int fromOutput, int toInput, DSPatch::SignalBus& toBus )
+// {
+//     auto& signal = *_outputBuses[bufferNo].GetSignal( fromOutput );
+//     auto& ref = _refs[bufferNo][fromOutput];
 
-    // wait for this output to be ready
-    ref.readyFlag.WaitAndClear();
+//     // wait for this output to be ready
+//     ref.readyFlag.WaitAndClear();
 
-    if ( !signal.has_value() )
-    {
-        return;
-    }
+//     if ( !signal.has_value() )
+//     {
+//         return;
+//     }
 
-    if ( ref.total == 1 )
-    {
-        // there's only one reference, move the signal immediately and return
-        toBus.MoveSignal( toInput, signal );
-    }
-    else if ( ++ref.count != ref.total )
-    {
-        // this is not the final reference, copy the signal
-        toBus.SetSignal( toInput, signal );
+//     if ( ref.total == 1 )
+//     {
+//         // there's only one reference, move the signal immediately and return
+//         toBus.MoveSignal( toInput, signal );
+//     }
+//     else if ( ++ref.count != ref.total )
+//     {
+//         // this is not the final reference, copy the signal
+//         toBus.SetSignal( toInput, signal );
 
-        // wake next WaitAndClear()
-        ref.readyFlag.Set();
-    }
-    else
-    {
-        // this is the final reference, reset the counter, move the signal
-        ref.count = 0;
-        toBus.MoveSignal( toInput, signal );
-    }
-}
+//         // wake next WaitAndClear()
+//         ref.readyFlag.Set();
+//     }
+//     else
+//     {
+//         // this is the final reference, reset the counter, move the signal
+//         ref.count = 0;
+//         toBus.MoveSignal( toInput, signal );
+//     }
+// }
 
 inline void Component::_IncRefs( int output )
 {
