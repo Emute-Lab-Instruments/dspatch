@@ -1,3 +1,6 @@
+## This is a version of DSPatch with the threading code stripped out so it will run on a microcontroller.
+
+
 [![Build & Test](https://github.com/cross-platform/dspatch/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/cross-platform/dspatch/actions/workflows/build_and_test.yml)
 
 # DSPatch
